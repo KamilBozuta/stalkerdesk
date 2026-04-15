@@ -1,105 +1,111 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Threading;
 
 namespace stalkerdesk
 {
-    /// <summary>
-    /// Logika interakcji dla klasy MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
-        // ObservableCollection automatycznie odświeża widok (DataGrid) w UI
         public ObservableCollection<Workstation> Computers { get; set; }
-        private DispatcherTimer _globalTimer;
+            = new ObservableCollection<Workstation>();
 
         public MainWindow()
         {
             InitializeComponent();
-            LoadData();
-            SetupTimer();
+            DataContext = this;
 
-            // Powiązanie danych z widokiem
-            this.DataContext = this;
+            ScanNetwork();
         }
 
-        private void LoadData()
+        // 🔍 SKANOWANIE
+        private async void ScanNetwork()
         {
-            // Przykładowe dane początkowe
-            Computers = new ObservableCollection<Workstation>
-            {
-                new Workstation { Name = "PC-01", IP = "192.168.1.10", TimeLeftSeconds = 3600 },
-                new Workstation { Name = "PC-02", IP = "192.168.1.11", TimeLeftSeconds = 1800 },
-                new Workstation { Name = "PC-03", IP = "192.168.1.12", TimeLeftSeconds = 0 }
-            };
-        }
+            string ip = GetLocalIP();
+            string subnet = ip[..ip.LastIndexOf('.') + 1];
 
-        private void SetupTimer()
-        {
-            // Timer odświeżający czas co sekundę
-            _globalTimer = new DispatcherTimer();
-            _globalTimer.Interval = TimeSpan.FromSeconds(1);
-            _globalTimer.Tick += (s, e) =>
+            SemaphoreSlim sem = new SemaphoreSlim(50);
+
+            for (int i = 1; i < 255; i++)
             {
-                foreach (var computer in Computers)
+                await sem.WaitAsync();
+                string targetIp = subnet + i;
+
+                _ = Task.Run(async () =>
                 {
-                    computer.Update();
-                }
-            };
-            _globalTimer.Start();
-        }
+                    try
+                    {
+                        Ping ping = new Ping();
+                        var reply = await ping.SendPingAsync(targetIp, 300);
 
-        // Metoda obsługująca przycisk z tabeli (wymaga dodania Click="SetTime_Click" w XAML)
-        private void SetTime_Click(object sender, RoutedEventArgs e)
-        {
-            var button = sender as System.Windows.Controls.Button;
-            var workstation = button?.DataContext as Workstation;
-
-            if (workstation != null)
-            {
-                // Tutaj można dodać okienko Dialog, na razie dodajemy 30 min na sztywno
-                workstation.TimeLeftSeconds += 1800;
-                MessageBox.Show($"Dodano czas dla {workstation.Name}");
-            }
-        }
-    }
-
-    // Klasa obiektowa reprezentująca komputer w sieci
-    public class Workstation : System.ComponentModel.INotifyPropertyChanged
-    {
-        public string Name { get; set; }
-        public string IP { get; set; }
-
-        private int _timeLeftSeconds;
-        public int TimeLeftSeconds
-        {
-            get => _timeLeftSeconds;
-            set
-            {
-                _timeLeftSeconds = value;
-                OnPropertyChanged(nameof(TimeLeft));
+                        if (reply.Status == IPStatus.Success)
+                        {
+                            Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                if (!Computers.Any(c => c.IP == targetIp))
+                                {
+                                    Computers.Add(new Workstation
+                                    {
+                                        IP = targetIp,
+                                        Name = targetIp
+                                    });
+                                }
+                            });
+                        }
+                    }
+                    catch { }
+                    finally
+                    {
+                        sem.Release();
+                    }
+                });
             }
         }
 
-        // Formatowanie czasu do wyświetlenia w tabeli
-        public string TimeLeft => TimeLeftSeconds > 0
-            ? TimeSpan.FromSeconds(TimeLeftSeconds).ToString(@"hh\:mm\:ss")
-            : "ZABLOKOWANY";
-
-        public void Update()
+        private string GetLocalIP()
         {
-            if (TimeLeftSeconds > 0)
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+
+            foreach (var ip in host.AddressList)
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                    return ip.ToString();
+
+            return "192.168.1.1";
+        }
+
+        // 📡 WYSYŁANIE KOMEND
+        private async Task SendCommand(string ip, string command)
+        {
+            try
             {
-                TimeLeftSeconds--;
+                using TcpClient client = new TcpClient();
+                await client.ConnectAsync(ip, 5000);
+
+                byte[] data = Encoding.UTF8.GetBytes(command);
+                await client.GetStream().WriteAsync(data, 0, data.Length);
+            }
+            catch
+            {
+                MessageBox.Show($"Brak połączenia z {ip}");
             }
         }
 
-        // Mechanizm powiadamiania UI o zmianie danych
-        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged(string name) =>
-            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(name));
+        // 🔘 BUTTON
+        private async void Manage_Click(object sender, RoutedEventArgs e)
+        {
+            var pc = (sender as System.Windows.Controls.Button)?.DataContext as Workstation;
+
+            if (pc != null)
+            {
+                ManageWindow window = new ManageWindow(pc, SendCommand);
+                window.ShowDialog();
+            }
+        }
     }
 }
