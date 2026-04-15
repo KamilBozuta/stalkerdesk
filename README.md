@@ -5,15 +5,6 @@ Aplikacja desktopowa napisana w języku **C# (WPF)** służąca do zarządzania 
 Program umożliwia administratorowi zdalne sterowanie komputerami oraz monitorowanie ich działania w sieci lokalnej.
 
 Po uruchomianiu aplikacji w oknie aplikacji wyświetla się lista dostępnych komputerów w sieci lan automatycznie pobranych za pomocą technologii UDP.
-Po wybraniu dowolnego komputera z listy, dostępna jest opcja wyłączenia urządzenia, resetowania, śledzenia procesów.
-
----# Aplikacja desktopowa (WPF) - StalkerDesc
-
-## Opis projektu
-Aplikacja desktopowa napisana w języku **C# (WPF)** służąca do zarządzania komputerami w pracowni szkolnej.  
-Program umożliwia administratorowi zdalne sterowanie komputerami oraz monitorowanie ich działania w sieci lokalnej.
-
-Po uruchomianiu aplikacji w oknie aplikacji wyświetla się lista dostępnych komputerów w sieci lan automatycznie pobranych za pomocą technologii UDP.
 Po wybraniu dowolnego komputera z listy, można kontrolować działanie komputerów.
 
 
@@ -53,63 +44,6 @@ Po wybraniu dowolnego komputera z listy, można kontrolować działanie komputer
 - Aplikacja działa w sieci lokalnej  
 - Klient musi być uruchomiony na komputerze docelowym  
 - Niektóre funkcje mogą wymagać uprawnień administratora  
-
-## Licencja
-Projekt edukacyjny – do użytku szkolnego.
-
-## Funkcjonalności
-- Wyświetlanie listy komputerów w sieci
-- Zdalne wyłączanie komputerów
-- Restart komputerów
-- Blokowanie komputerów
-- Wyświetlanie listy procesów
-- Zamykanie wybranych procesów
-- Podgląd logów i aktywności
-
----
-
-## Technologie
-- C#
-- WPF (Windows Presentation Foundation)
-- .NET
-- TCP/IP (komunikacja sieciowa)
-
----
-
-## Autorzy
-- Jakub Sajda - Team lider / Scrum master
-- Maksymilian Cedro – Backend / Serwer
-- Kamil Bożuta – Frontend / UI 
-- Huber Zaremba –  Komunikacja / GitHub
-
----
-
-## Instrukcja działania
-### Obsługa programu
-
-- Po uruchomieniu klienta komputer pojawi się na liście  
-- Wybierz komputer z listy  
-- Użyj przycisków:
-  - **Wyłącz** – wyłącza komputer  
-  - **Restart** – restartuje komputer  
-  - **Zablokuj** – blokuje ekran  
-
-
-### Procesy
-- Wybierz komputer  
-- Przejdź do zakładki „Procesy”  
-- Możesz:
-  - zobaczyć listę procesów  
-  - zamknąć wybrany proces  
-
----
-
-## Uwagi
-- Aplikacja działa w sieci lokalnej  
-- Klient musi być uruchomiony na komputerze docelowym  
-- Niektóre funkcje mogą wymagać uprawnień administratora  
-
----
 
 ## Licencja
 Projekt edukacyjny – do użytku szkolnego.
