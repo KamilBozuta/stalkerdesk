@@ -1,0 +1,20 @@
+﻿<Window x:Class="stalkerdesk.ManageWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Zarządzanie komputerem"
+        Height="300" Width="300"
+        WindowStartupLocation="CenterScreen"
+        Background="#1E1E1E">
+
+    <StackPanel Margin="20">
+        <TextBlock x:Name="PcName"
+                   Foreground="White"
+                   FontSize="18"
+                   Margin="0,0,0,20"/>
+
+        <Button Content="Wyłącz komputer" Click="Shutdown_Click" Margin="0,5"/>
+        <Button Content="Restartuj" Click="Restart_Click" Margin="0,5"/>
+        <Button Content="Zablokuj" Click="Lock_Click" Margin="0,5"/>
+    </StackPanel>
+
+</Window>
