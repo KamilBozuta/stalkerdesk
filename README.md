@@ -22,6 +22,9 @@ Po wybraniu dowolnego komputera z listy, można kontrolować działanie komputer
 - WPF (Windows Presentation Foundation)
 - .NET
 - TCP/IP (komunikacja sieciowa)
+- PING
+- DNS
+- Process.Start
 
 ## Autorzy
 - Jakub Sajda - Team lider / Scrum master
@@ -41,8 +44,8 @@ Po wybraniu dowolnego komputera z listy, można kontrolować działanie komputer
 
 
 ## Uwagi
-- Aplikacja działa w sieci lokalnej  
-- Klient musi być uruchomiony na komputerze docelowym  
+- Aplikacja działa w sieci lokalnej a komputer kliencki wymaga skryptu clientApp
+- Klient musi być uruchomiony na komputerze docelowym
 - Niektóre funkcje mogą wymagać uprawnień administratora  
 
 ## Licencja
