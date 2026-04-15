@@ -1,0 +1,7 @@
+C:\Users\Klasa4gr2 - progr\source\repos\stalkerDesc\stalkerDesc\bin\Debug\stalkerDesc.exe.config
+C:\Users\Klasa4gr2 - progr\source\repos\stalkerDesc\stalkerDesc\bin\Debug\stalkerDesc.exe
+C:\Users\Klasa4gr2 - progr\source\repos\stalkerDesc\stalkerDesc\bin\Debug\stalkerDesc.pdb
+C:\Users\Klasa4gr2 - progr\source\repos\stalkerDesc\stalkerDesc\obj\Debug\stalkerDesc.csproj.AssemblyReference.cache
+C:\Users\Klasa4gr2 - progr\source\repos\stalkerDesc\stalkerDesc\obj\Debug\stalkerDesc.csproj.CoreCompileInputs.cache
+C:\Users\Klasa4gr2 - progr\source\repos\stalkerDesc\stalkerDesc\obj\Debug\stalkerDesc.exe
+C:\Users\Klasa4gr2 - progr\source\repos\stalkerDesc\stalkerDesc\obj\Debug\stalkerDesc.pdb
