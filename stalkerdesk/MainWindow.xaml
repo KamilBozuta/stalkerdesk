@@ -1,4 +1,4 @@
-﻿<Window x:Class="stalkerdesk.MainWindow"
+<Window x:Class="stalkerdesk.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="StalkerDesk - Admin Panel" Height="600" Width="1000"
@@ -21,6 +21,7 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="Background" Value="#3E3E42"/>
@@ -38,14 +39,35 @@
 
         <!-- MENU -->
         <Border Background="#252526" Grid.Column="0" CornerRadius="0,15,15,0">
-            <StackPanel Margin="10">
-                <TextBlock Text="STALKER DESK" Foreground="White" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,20,0,40"/>
 
-                <Button Content="Dashboard" Style="{StaticResource MenuButtonStyle}"/>
-                <Button Content="Komputery" Style="{StaticResource MenuButtonStyle}"/>
-                <Button Content="Harmonogram" Style="{StaticResource MenuButtonStyle}"/>
-                <Button Content="Ustawienia" Style="{StaticResource MenuButtonStyle}" Margin="0,200,0,0"/>
-            </StackPanel>
+            <Grid Margin="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- GÓRA MENU -->
+                <StackPanel Grid.Row="0">
+
+                    <TextBlock Text="STALKER DESK"
+                               Foreground="White"
+                               FontSize="20"
+                               FontWeight="Bold"
+                               HorizontalAlignment="Center"
+                               Margin="0,20,0,40"/>
+
+                </StackPanel>
+
+                <!-- DÓŁ MENU -->
+                <StackPanel Grid.Row="1">
+
+                    <Button Content="Zamknij aplikację"
+                            Style="{StaticResource MenuButtonStyle}"
+                            Click="CloseApp_Click"/>
+
+                </StackPanel>
+
+            </Grid>
         </Border>
 
         <!-- GŁÓWNY PANEL -->
@@ -60,7 +82,12 @@
                        FontSize="28"
                        FontWeight="SemiBold"/>
 
-            <Border Grid.Row="1" Background="#2D2D30" CornerRadius="15" Padding="15" Margin="0,20,0,0">
+            <Border Grid.Row="1"
+                    Background="#2D2D30"
+                    CornerRadius="15"
+                    Padding="15"
+                    Margin="0,20,0,0">
+
                 <DataGrid ItemsSource="{Binding Computers}"
                           Background="Transparent"
                           BorderThickness="0"
@@ -88,9 +115,9 @@
                         </DataGridTemplateColumn>
 
                     </DataGrid.Columns>
+
                 </DataGrid>
             </Border>
         </Grid>
     </Grid>
 </Window>
- 
