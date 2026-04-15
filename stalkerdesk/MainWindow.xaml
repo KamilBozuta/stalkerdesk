@@ -5,6 +5,7 @@
         WindowStartupLocation="CenterScreen" Background="#1E1E1E">
 
     <Window.Resources>
+
         <Style x:Key="MenuButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="#CCCCCC"/>
@@ -12,11 +13,14 @@
             <Setter Property="Margin" Value="0,5"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="BorderThickness" Value="0"/>
+
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="8">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
@@ -29,6 +33,7 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+
     </Window.Resources>
 
     <Grid>
@@ -39,38 +44,31 @@
 
         <!-- MENU -->
         <Border Background="#252526" Grid.Column="0" CornerRadius="0,15,15,0">
-
             <Grid Margin="10">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- GÓRA MENU -->
                 <StackPanel Grid.Row="0">
-
                     <TextBlock Text="STALKER DESK"
                                Foreground="White"
                                FontSize="20"
                                FontWeight="Bold"
                                HorizontalAlignment="Center"
                                Margin="0,20,0,40"/>
-
                 </StackPanel>
 
-                <!-- DÓŁ MENU -->
                 <StackPanel Grid.Row="1">
-
                     <Button Content="Zamknij aplikację"
                             Style="{StaticResource MenuButtonStyle}"
                             Click="CloseApp_Click"/>
-
                 </StackPanel>
 
             </Grid>
         </Border>
 
-        <!-- GŁÓWNY PANEL -->
+        <!-- MAIN -->
         <Grid Grid.Column="1" Margin="25">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -117,6 +115,7 @@
                     </DataGrid.Columns>
 
                 </DataGrid>
+
             </Border>
         </Grid>
     </Grid>
