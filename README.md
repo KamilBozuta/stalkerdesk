@@ -37,29 +37,8 @@ Po wybraniu dowolnego komputera z listy, dostępna jest opcja wyłączenia urzą
 ---
 
 ## Instrukcja działania
+### Obsługa programu
 
-### 1. Wymagania
-- System Windows
-- Zainstalowany .NET (np. .NET 6 lub nowszy)
-- Visual Studio (opcjonalnie)
-
----
-
-### 2. Uruchomienie serwera (aplikacji głównej)
-1. Otwórz projekt w Visual Studio  
-2. Uruchom aplikację (F5)  
-3. Aplikacja zacznie nasłuchiwać połączeń  
-
----
-
-### 3. Uruchomienie klienta (agenta)
-1. Uruchom aplikację klienta na komputerze w sieci  
-2. Wprowadź adres IP serwera (jeśli wymagane)  
-3. Połącz się z serwerem  
-
----
-
-### 4. Obsługa programu
 - Po uruchomieniu klienta komputer pojawi się na liście  
 - Wybierz komputer z listy  
 - Użyj przycisków:
@@ -67,9 +46,8 @@ Po wybraniu dowolnego komputera z listy, dostępna jest opcja wyłączenia urzą
   - **Restart** – restartuje komputer  
   - **Zablokuj** – blokuje ekran  
 
----
 
-### 5. Procesy
+### Procesy
 - Wybierz komputer  
 - Przejdź do zakładki „Procesy”  
 - Możesz:
@@ -78,12 +56,12 @@ Po wybraniu dowolnego komputera z listy, dostępna jest opcja wyłączenia urzą
 
 ---
 
-## ⚠️ Uwagi
+## Uwagi
 - Aplikacja działa w sieci lokalnej  
 - Klient musi być uruchomiony na komputerze docelowym  
 - Niektóre funkcje mogą wymagać uprawnień administratora  
 
 ---
 
-## 📄 Licencja
+## Licencja
 Projekt edukacyjny – do użytku szkolnego.
