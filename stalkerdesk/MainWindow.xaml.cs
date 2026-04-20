@@ -21,42 +21,48 @@ namespace stalkerdesk
             InitializeComponent();
             DataContext = this;
 
-            ScanNetwork();
+            Loaded += async (s, e) => await ScanNetwork();
         }
 
-        // 🔍 SKANOWANIE
-        private async void ScanNetwork()
+        private async Task ScanNetwork()
         {
             string ip = GetLocalIP();
-            string subnet = ip[..ip.LastIndexOf('.') + 1];
+
+            int lastDot = ip.LastIndexOf('.');
+            string subnet = lastDot > 0 ? ip.Substring(0, lastDot + 1) : "192.168.1.";
 
             SemaphoreSlim sem = new SemaphoreSlim(50);
+            Task[] tasks = new Task[254];
 
             for (int i = 1; i < 255; i++)
             {
                 await sem.WaitAsync();
                 string targetIp = subnet + i;
 
-                _ = Task.Run(async () =>
+                tasks[i - 1] = Task.Run(async () =>
                 {
                     try
                     {
-                        Ping ping = new Ping();
-                        var reply = await ping.SendPingAsync(targetIp, 300);
-
-                        if (reply.Status == IPStatus.Success)
+                        using (Ping ping = new Ping())
                         {
-                            Application.Current.Dispatcher.Invoke(() =>
+                            var reply = await ping.SendPingAsync(targetIp, 300);
+
+                            if (reply.Status == IPStatus.Success)
                             {
-                                if (!Computers.Any(c => c.IP == targetIp))
+                                string hostName = GetHostName(targetIp);
+
+                                await Dispatcher.InvokeAsync(() =>
                                 {
-                                    Computers.Add(new Workstation
+                                    if (!Computers.Any(c => c.IP == targetIp))
                                     {
-                                        IP = targetIp,
-                                        Name = targetIp
-                                    });
-                                }
-                            });
+                                        Computers.Add(new Workstation
+                                        {
+                                            IP = targetIp,
+                                            Name = hostName
+                                        });
+                                    }
+                                });
+                            }
                         }
                     }
                     catch { }
@@ -66,6 +72,8 @@ namespace stalkerdesk
                     }
                 });
             }
+
+            await Task.WhenAll(tasks);
         }
 
         private string GetLocalIP()
@@ -79,16 +87,33 @@ namespace stalkerdesk
             return "192.168.1.1";
         }
 
-        // 📡 WYSYŁANIE KOMEND
+        private string GetHostName(string ip)
+        {
+            try
+            {
+                var entry = Dns.GetHostEntry(ip);
+                return entry.HostName;
+            }
+            catch
+            {
+                return "Unknown device";
+            }
+        }
+
         private async Task SendCommand(string ip, string command)
         {
             try
             {
-                using TcpClient client = new TcpClient();
-                await client.ConnectAsync(ip, 5000);
+                using (TcpClient client = new TcpClient())
+                {
+                    await client.ConnectAsync(ip, 5000);
 
-                byte[] data = Encoding.UTF8.GetBytes(command);
-                await client.GetStream().WriteAsync(data, 0, data.Length);
+                    var stream = client.GetStream();
+                    byte[] data = Encoding.UTF8.GetBytes(command);
+
+                    await stream.WriteAsync(data, 0, data.Length);
+                    await stream.FlushAsync();
+                }
             }
             catch
             {
@@ -96,16 +121,20 @@ namespace stalkerdesk
             }
         }
 
-        // 🔘 BUTTON
-        private async void Manage_Click(object sender, RoutedEventArgs e)
+        private void Manage_Click(object sender, RoutedEventArgs e)
         {
-            var pc = (sender as System.Windows.Controls.Button)?.DataContext as Workstation;
+            var pc = (sender as FrameworkElement)?.DataContext as Workstation;
 
             if (pc != null)
             {
                 ManageWindow window = new ManageWindow(pc, SendCommand);
                 window.ShowDialog();
             }
+        }
+
+        private void CloseApp_Click(object sender, RoutedEventArgs e)
+        {
+            Application.Current.Shutdown();
         }
     }
 }
