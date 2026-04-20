@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -12,6 +12,7 @@ namespace stalkerdesk
         public ManageWindow(Workstation pc, Func<string, string, Task> sendCommand)
         {
             InitializeComponent();
+
             _pc = pc;
             _sendCommand = sendCommand;
 
