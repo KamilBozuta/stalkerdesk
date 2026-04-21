@@ -1,0 +1,14 @@
+C:\Users\Klasa4gr2 - progr\source\repos\clientApp\clientApp\obj\Debug\clientApp.csproj.AssemblyReference.cache
+C:\Users\Klasa4gr2 - progr\source\repos\clientApp\clientApp\obj\Debug\MainWindow.baml
+C:\Users\Klasa4gr2 - progr\source\repos\clientApp\clientApp\obj\Debug\MainWindow.g.cs
+C:\Users\Klasa4gr2 - progr\source\repos\clientApp\clientApp\obj\Debug\App.g.cs
+C:\Users\Klasa4gr2 - progr\source\repos\clientApp\clientApp\obj\Debug\clientApp_MarkupCompile.cache
+C:\Users\Klasa4gr2 - progr\source\repos\clientApp\clientApp\obj\Debug\clientApp.g.resources
+C:\Users\Klasa4gr2 - progr\source\repos\clientApp\clientApp\obj\Debug\clientApp.Properties.Resources.resources
+C:\Users\Klasa4gr2 - progr\source\repos\clientApp\clientApp\obj\Debug\clientApp.csproj.GenerateResource.cache
+C:\Users\Klasa4gr2 - progr\source\repos\clientApp\clientApp\obj\Debug\clientApp.csproj.CoreCompileInputs.cache
+C:\Users\Klasa4gr2 - progr\source\repos\clientApp\clientApp\bin\Debug\clientApp.exe.config
+C:\Users\Klasa4gr2 - progr\source\repos\clientApp\clientApp\bin\Debug\clientApp.exe
+C:\Users\Klasa4gr2 - progr\source\repos\clientApp\clientApp\bin\Debug\clientApp.pdb
+C:\Users\Klasa4gr2 - progr\source\repos\clientApp\clientApp\obj\Debug\clientApp.exe
+C:\Users\Klasa4gr2 - progr\source\repos\clientApp\clientApp\obj\Debug\clientApp.pdb
