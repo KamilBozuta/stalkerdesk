@@ -1,140 +1,216 @@
-using System;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Net;
-using System.Net.NetworkInformation;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows;
+<Window x:Class="stalkerdesk.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="StalkerDesk - Admin Panel"
+        Height="600" Width="1000"
+        WindowStartupLocation="CenterScreen"
+        Background="#0B1220">
 
-namespace stalkerdesk
-{
-    public partial class MainWindow : Window
-    {
-        public ObservableCollection<Workstation> Computers { get; set; }
-            = new ObservableCollection<Workstation>();
+    <Window.Resources>
 
-        public MainWindow()
-        {
-            InitializeComponent();
-            DataContext = this;
+        <!-- COLORS -->
+        <SolidColorBrush x:Key="Navy1" Color="#0F1B33"/>
+        <SolidColorBrush x:Key="Navy2" Color="#14264A"/>
+        <SolidColorBrush x:Key="TextMain" Color="#E5E7EB"/>
+        <SolidColorBrush x:Key="TextMuted" Color="#9CA3AF"/>
+        <SolidColorBrush x:Key="AccentBlue" Color="#3B82F6"/>
+        <SolidColorBrush x:Key="AccentBlueHover" Color="#2563EB"/>
 
-            Loaded += async (s, e) => await ScanNetwork();
-        }
+        <!-- MENU BUTTON -->
+        <Style x:Key="MenuButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+            <Setter Property="Height" Value="45"/>
+            <Setter Property="Margin" Value="0,5"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
 
-        private async Task ScanNetwork()
-        {
-            string ip = GetLocalIP();
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="10">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
 
-            int lastDot = ip.LastIndexOf('.');
-            string subnet = lastDot > 0 ? ip.Substring(0, lastDot + 1) : "192.168.1.";
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource Navy2}"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
 
-            SemaphoreSlim sem = new SemaphoreSlim(50);
-            Task[] tasks = new Task[254];
+        <!-- GRID BUTTON -->
+        <Style x:Key="GridButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource AccentBlue}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="6,3"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
 
-            for (int i = 1; i < 255; i++)
-            {
-                await sem.WaitAsync();
-                string targetIp = subnet + i;
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
 
-                tasks[i - 1] = Task.Run(async () =>
-                {
-                    try
-                    {
-                        using (Ping ping = new Ping())
-                        {
-                            var reply = await ping.SendPingAsync(targetIp, 300);
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource AccentBlueHover}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
 
-                            if (reply.Status == IPStatus.Success)
-                            {
-                                string hostName = GetHostName(targetIp);
+        <!-- DARK HEADER -->
+        <Style x:Key="DataGridHeaderStyle" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#0B1220"/>
+            <Setter Property="Foreground" Value="#9CA3AF"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
 
-                                await Dispatcher.InvokeAsync(() =>
-                                {
-                                    if (!Computers.Any(c => c.IP == targetIp))
-                                    {
-                                        Computers.Add(new Workstation
-                                        {
-                                            IP = targetIp,
-                                            Name = hostName
-                                        });
-                                    }
-                                });
-                            }
-                        }
-                    }
-                    catch { }
-                    finally
-                    {
-                        sem.Release();
-                    }
-                });
-            }
+    </Window.Resources>
 
-            await Task.WhenAll(tasks);
-        }
+    <Grid>
 
-        private string GetLocalIP()
-        {
-            var host = Dns.GetHostEntry(Dns.GetHostName());
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
 
-            foreach (var ip in host.AddressList)
-                if (ip.AddressFamily == AddressFamily.InterNetwork)
-                    return ip.ToString();
+        <!-- MENU -->
+        <Border Background="{StaticResource Navy1}"
+                Grid.Column="0"
+                CornerRadius="0,18,18,0">
 
-            return "192.168.1.1";
-        }
+            <Grid Margin="12">
 
-        private string GetHostName(string ip)
-        {
-            try
-            {
-                var entry = Dns.GetHostEntry(ip);
-                return entry.HostName;
-            }
-            catch
-            {
-                return "Unknown device";
-            }
-        }
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-        private async Task SendCommand(string ip, string command)
-        {
-            try
-            {
-                using (TcpClient client = new TcpClient())
-                {
-                    await client.ConnectAsync(ip, 5000);
+                <StackPanel Grid.Row="0">
 
-                    var stream = client.GetStream();
-                    byte[] data = Encoding.UTF8.GetBytes(command);
+                    <TextBlock Text="STALKER DESK"
+                               Foreground="White"
+                               FontSize="20"
+                               FontWeight="Bold"
+                               HorizontalAlignment="Center"
+                               Margin="0,25,0,50"/>
 
-                    await stream.WriteAsync(data, 0, data.Length);
-                    await stream.FlushAsync();
-                }
-            }
-            catch
-            {
-                MessageBox.Show($"Brak połączenia z {ip}");
-            }
-        }
+                </StackPanel>
 
-        private void Manage_Click(object sender, RoutedEventArgs e)
-        {
-            var pc = (sender as FrameworkElement)?.DataContext as Workstation;
+                <StackPanel Grid.Row="1">
 
-            if (pc != null)
-            {
-                ManageWindow window = new ManageWindow(pc, SendCommand);
-                window.ShowDialog();
-            }
-        }
+                    <Button Content="Zamknij aplikację"
+                            Background="#DC2626"
+                            Foreground="White"
+                            FontWeight="SemiBold"
+                            BorderThickness="0"
+                            Height="45"
+                            Click="CloseApp_Click"/>
 
-        private void CloseApp_Click(object sender, RoutedEventArgs e)
-        {
-            Application.Current.Shutdown();
-        }
-    }
-}
+                </StackPanel>
+
+            </Grid>
+
+        </Border>
+
+        <!-- MAIN -->
+        <Grid Grid.Column="1" Margin="25">
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Text="Lista komputerów w sieci"
+                       Foreground="{StaticResource TextMain}"
+                       FontSize="28"
+                       FontWeight="SemiBold"/>
+
+            <Border Grid.Row="1"
+                    Background="{StaticResource Navy1}"
+                    CornerRadius="16"
+                    Padding="15"
+                    Margin="0,20,0,0">
+
+                <DataGrid ItemsSource="{Binding Computers}"
+                          Background="Transparent"
+                          BorderThickness="0"
+                          Foreground="{StaticResource TextMain}"
+                          RowBackground="{StaticResource Navy2}"
+                          AlternatingRowBackground="#1B2A4A"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          GridLinesVisibility="None"
+                          HeadersVisibility="Column"
+                          ColumnHeaderStyle="{StaticResource DataGridHeaderStyle}"
+                          IsReadOnly="False">
+
+                    <DataGrid.Columns>
+
+                        <!-- NAME -->
+                        <DataGridTextColumn Header="Nazwa komputera"
+                                            Binding="{Binding Name}"
+                                            IsReadOnly="True"
+                                            Width="2*"/>
+
+                        <!-- IP (EDITABLE) -->
+                        <DataGridTextColumn Header="Adres IP"
+                                            Binding="{Binding IP, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                            Width="1*">
+
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="#9CA3AF"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+
+                            <DataGridTextColumn.EditingElementStyle>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Background" Value="#111C33"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="BorderBrush" Value="#3B82F6"/>
+                                    <Setter Property="Padding" Value="4"/>
+                                </Style>
+                            </DataGridTextColumn.EditingElementStyle>
+
+                        </DataGridTextColumn>
+
+                        <!-- ACTIONS -->
+                        <DataGridTemplateColumn Header="Akcje" Width="150">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="Zarządzaj"
+                                            Click="Manage_Click"
+                                            Style="{StaticResource GridButton}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                    </DataGrid.Columns>
+
+                </DataGrid>
+
+            </Border>
+
+        </Grid>
+
+    </Grid>
+
+</Window>
