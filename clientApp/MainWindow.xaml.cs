@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -13,62 +13,62 @@ namespace clientApp
     {
         private TcpListener server;
         private CancellationTokenSource cts;
-        private bool isRunning = false;
 
         public MainWindow()
         {
             InitializeComponent();
+            Loaded += MainWindow_Loaded;
+            Closed += MainWindow_Closed;
         }
 
-        private async void StartStopButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (!isRunning)
-            {
-                StartServer();
-                StartStopButton.Content = "STOP";
-                StartStopButton.Background = System.Windows.Media.Brushes.Red;
-                isRunning = true;
-            }
-            else
-            {
-                StopServer();
-                StartStopButton.Content = "START";
-                StartStopButton.Background = System.Windows.Media.Brushes.Green;
-                isRunning = false;
-            }
-        }
-
-        private void StartServer()
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             cts = new CancellationTokenSource();
-            server = new TcpListener(IPAddress.Any, 5000);
-            server.Start();
-
-            Task.Run(() => ListenLoop(cts.Token));
+            Task.Run(() => StartServer(cts.Token));
         }
 
-        private void StopServer()
+        private void MainWindow_Closed(object sender, EventArgs e)
         {
             try
             {
                 cts.Cancel();
-                server.Stop();
+                server?.Stop();
             }
             catch { }
         }
 
-        private async Task ListenLoop(CancellationToken token)
+        private void StartServer(CancellationToken token)
         {
             try
             {
+                server = new TcpListener(IPAddress.Any, 5000);
+                server.Start();
+
+                Dispatcher.Invoke(() =>
+                {
+                    StatusText.Text = "Agent działa...";
+                });
+
                 while (!token.IsCancellationRequested)
                 {
-                    var client = await server.AcceptTcpClientAsync();
+                    if (!server.Pending())
+                    {
+                        Thread.Sleep(100);
+                        continue;
+                    }
 
-                    _ = Task.Run(() => HandleClient(client), token);
+                    TcpClient client = server.AcceptTcpClient();
+
+                    Task.Run(() => HandleClient(client));
                 }
             }
-            catch { }
+            catch (Exception)
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    StatusText.Text = "Błąd serwera";
+                });
+            }
         }
 
         private void HandleClient(TcpClient client)
@@ -81,12 +81,14 @@ namespace clientApp
                 int bytes = stream.Read(buffer, 0, buffer.Length);
                 string cmd = Encoding.UTF8.GetString(buffer, 0, bytes).Trim();
 
-                Console.WriteLine("CMD: " + cmd);
                 Execute(cmd);
 
                 client.Close();
             }
-            catch { }
+            catch
+            {
+                client.Close();
+            }
         }
 
         private void Execute(string cmd)
@@ -108,3 +110,4 @@ namespace clientApp
         }
     }
 }
+ 
