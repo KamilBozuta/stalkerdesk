@@ -1,7 +1,9 @@
 <Window x:Class="AgentWpf.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Agent WPF" Height="350" Width="600">
+        Title="Agent WPF"
+        Height="350"
+        Width="600">
     <Grid>
         <TextBox Name="LogBox"
                  Margin="10"
@@ -11,3 +13,5 @@
                  IsReadOnly="True"/>
     </Grid>
 </Window>
+
+ 
