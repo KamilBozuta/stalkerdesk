@@ -7,8 +7,6 @@ namespace stalkerdesk
         private string name;
         private string ip;
 
-        private string ip2;
-
         public string Name
         {
             get => name;
