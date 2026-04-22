@@ -13,9 +13,6 @@ Po wybraniu dowolnego komputera z listy, można kontrolować działanie komputer
 - Zdalne wyłączanie komputerów
 - Restart komputerów
 - Blokowanie komputerów
-- Wyświetlanie listy procesów
-- Zamykanie wybranych procesów
-- Podgląd logów i aktywności 
 
 ## Technologie
 - C#
