@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -313,17 +314,53 @@ namespace stalkerdesk
         // =========================
         // UI EVENTS
         // =========================
+
         private void Manage_Click(object sender, RoutedEventArgs e)
         {
             var pc = (sender as FrameworkElement)?.DataContext as Workstation;
 
             if (pc != null)
-                new ManageWindow(pc, SendCommand).ShowDialog();
+                new ManageWindow(pc, SendCommand, ShowScreen).ShowDialog();
         }
+
 
         private void CloseApp_Click(object sender, RoutedEventArgs e)
         {
             Application.Current.Shutdown();
+        }
+        public async Task ShowScreen(string ip)
+        {
+            try
+            {
+                using (TcpClient client = new TcpClient())
+                {
+                    await client.ConnectAsync(ip, 5000);
+
+                    using (NetworkStream stream = client.GetStream())
+                    using (StreamWriter writer = new StreamWriter(stream) { AutoFlush = true })
+                    {
+                        await writer.WriteLineAsync("screen");
+
+                        byte[] sizeBuf = new byte[4];
+                        await stream.ReadAsync(sizeBuf, 0, 4);
+                        int size = BitConverter.ToInt32(sizeBuf, 0);
+
+                        byte[] img = new byte[size];
+                        int read = 0;
+                        while (read < size)
+                            read += await stream.ReadAsync(img, read, size - read);
+
+                        Dispatcher.Invoke(() =>
+                        {
+                            new ScreenViewWindow(img).Show();
+                        });
+                    }
+                }
+            }
+            catch
+            {
+                MessageBox.Show("Błąd pobierania podglądu");
+            }
         }
     }
 }
