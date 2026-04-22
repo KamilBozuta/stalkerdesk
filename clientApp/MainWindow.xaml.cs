@@ -7,92 +7,91 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace clientApp
+namespace AgentWpf
 {
     public partial class MainWindow : Window
     {
-        private TcpListener server;
-        private CancellationTokenSource cts;
+        private CancellationTokenSource _timerCts;
+        private TcpListener _server;
 
         public MainWindow()
         {
             InitializeComponent();
-            Loaded += MainWindow_Loaded;
-            Closed += MainWindow_Closed;
+            StartServer();
         }
 
-        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        private void Log(string text)
         {
-            cts = new CancellationTokenSource();
-            Task.Run(() => StartServer(cts.Token));
-        }
-
-        private void MainWindow_Closed(object sender, EventArgs e)
-        {
-            try
+            Dispatcher.Invoke(() =>
             {
-                cts.Cancel();
-                server?.Stop();
-            }
-            catch { }
+                LogBox.AppendText(text + Environment.NewLine);
+                LogBox.ScrollToEnd();
+            });
         }
 
-        private void StartServer(CancellationToken token)
+        private void StartServer()
         {
-            try
+            _server = new TcpListener(IPAddress.Any, 5000);
+            _server.Start();
+
+            Log("Agent działa...");
+
+            Task.Run(async () =>
             {
-                server = new TcpListener(IPAddress.Any, 5000);
-                server.Start();
-
-                Dispatcher.Invoke(() =>
+                while (true)
                 {
-                    StatusText.Text = "Agent działa...";
-                });
-
-                while (!token.IsCancellationRequested)
-                {
-                    if (!server.Pending())
+                    try
                     {
-                        Thread.Sleep(100);
-                        continue;
+                        var client = await _server.AcceptTcpClientAsync();
+                        Task.Run(() => HandleClient(client));
                     }
-
-                    TcpClient client = server.AcceptTcpClient();
-
-                    Task.Run(() => HandleClient(client));
+                    catch (Exception ex)
+                    {
+                        Log(ex.Message);
+                    }
                 }
-            }
-            catch (Exception)
-            {
-                Dispatcher.Invoke(() =>
-                {
-                    StatusText.Text = "Błąd serwera";
-                });
-            }
+            });
         }
 
         private void HandleClient(TcpClient client)
         {
             try
             {
-                var stream = client.GetStream();
-                byte[] buffer = new byte[1024];
+                using (var stream = client.GetStream())
+                using (var reader = new System.IO.StreamReader(stream, Encoding.UTF8))
+                {
+                    string cmd = reader.ReadLine();
+                    if (cmd != null)
+                        cmd = cmd.Trim();
 
-                int bytes = stream.Read(buffer, 0, buffer.Length);
-                string cmd = Encoding.UTF8.GetString(buffer, 0, bytes).Trim();
+                    if (string.IsNullOrEmpty(cmd))
+                        return;
 
-                Execute(cmd);
+                    Log("CMD: " + cmd);
+                    Execute(cmd);
+                }
 
                 client.Close();
             }
-            catch
+            catch (Exception ex)
             {
-                client.Close();
+                Log(ex.Message);
             }
         }
 
         private void Execute(string cmd)
         {
+            if (cmd.StartsWith("timer"))
+            {
+                var parts = cmd.Split(' ');
+                int minutes;
+
+                if (parts.Length == 2 && int.TryParse(parts[1], out minutes))
+                    StartTimer(minutes);
+
+                return;
+            }
+
             switch (cmd)
             {
                 case "shutdown":
@@ -108,6 +107,34 @@ namespace clientApp
                     break;
             }
         }
+
+        private void StartTimer(int minutes)
+        {
+            if (_timerCts != null)
+                _timerCts.Cancel();
+
+            _timerCts = new CancellationTokenSource();
+            var token = _timerCts.Token;
+
+            Log("Timer: " + minutes + " min");
+
+            Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(TimeSpan.FromMinutes(minutes), token);
+
+                    if (!token.IsCancellationRequested)
+                    {
+                        Log("Czas minął → LOCK");
+                        Process.Start("rundll32.exe", "user32.dll,LockWorkStation");
+                    }
+                }
+                catch (TaskCanceledException)
+                {
+                    Log("Timer anulowany");
+                }
+            });
+        }
     }
 }
- 
