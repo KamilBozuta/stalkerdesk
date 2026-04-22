@@ -1,216 +1,329 @@
-<Window x:Class="stalkerdesk.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="StalkerDesk - Admin Panel"
-        Height="600" Width="1000"
-        WindowStartupLocation="CenterScreen"
-        Background="#0B1220">
+using System;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Linq;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Threading;
 
-    <Window.Resources>
+namespace stalkerdesk
+{
+    public partial class MainWindow : Window
+    {
+        public ObservableCollection<Workstation> Computers { get; set; }
+            = new ObservableCollection<Workstation>();
 
-        <!-- COLORS -->
-        <SolidColorBrush x:Key="Navy1" Color="#0F1B33"/>
-        <SolidColorBrush x:Key="Navy2" Color="#14264A"/>
-        <SolidColorBrush x:Key="TextMain" Color="#E5E7EB"/>
-        <SolidColorBrush x:Key="TextMuted" Color="#9CA3AF"/>
-        <SolidColorBrush x:Key="AccentBlue" Color="#3B82F6"/>
-        <SolidColorBrush x:Key="AccentBlueHover" Color="#2563EB"/>
+        private DispatcherTimer _timer;
+        private int _timeLeft;
+        private Workstation _selectedPC;
 
-        <!-- MENU BUTTON -->
-        <Style x:Key="MenuButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
-            <Setter Property="Height" Value="45"/>
-            <Setter Property="Margin" Value="0,5"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
+        public MainWindow()
+        {
+            InitializeComponent();
+            DataContext = this;
 
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
-                                CornerRadius="10">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+            // 🔥 TIMER INIT
+            _timer = new DispatcherTimer();
+            _timer.Interval = TimeSpan.FromSeconds(1);
+            _timer.Tick += Timer_Tick;
 
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="{StaticResource Navy2}"/>
-                    <Setter Property="Foreground" Value="White"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
+            Loaded += async (s, e) =>
+            {
+                await Task.Run(ScanAllNetworks);
+            };
+        }
 
-        <!-- GRID BUTTON -->
-        <Style x:Key="GridButton" TargetType="Button">
-            <Setter Property="Background" Value="{StaticResource AccentBlue}"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="6,3"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
+        // =========================
+        // ⏱️ TIMER LOGIC
+        // =========================
+        private async void Timer_Tick(object sender, EventArgs e)
+        {
+            _timeLeft--;
 
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
-                                CornerRadius="8"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+            Debug.WriteLine($"Pozostało: {_timeLeft}s");
 
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="{StaticResource AccentBlueHover}"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
+            if (_timeLeft <= 0)
+            {
+                _timer.Stop();
 
-        <!-- DARK HEADER -->
-        <Style x:Key="DataGridHeaderStyle" TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#0B1220"/>
-            <Setter Property="Foreground" Value="#9CA3AF"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="BorderThickness" Value="0"/>
-        </Style>
+                if (_selectedPC != null)
+                {
+                    await SendCommand(_selectedPC.IP, "shutdown");
+                    MessageBox.Show($"Komputer {_selectedPC.IP} został wyłączony.");
+                }
+            }
+        }
 
-    </Window.Resources>
+        private void StartTimer_Click(object sender, RoutedEventArgs e)
+        {
+            var pc = (sender as FrameworkElement)?.DataContext as Workstation;
 
-    <Grid>
+            if (pc == null)
+                return;
 
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="220"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
+            _selectedPC = pc;
 
-        <!-- MENU -->
-        <Border Background="{StaticResource Navy1}"
-                Grid.Column="0"
-                CornerRadius="0,18,18,0">
+            int minutes = 5; // 👉 możesz podpiąć textbox
+            _timeLeft = minutes * 60;
 
-            <Grid Margin="12">
+            _timer.Start();
 
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+            MessageBox.Show($"Timer ustawiony na {minutes} minut dla {pc.IP}");
+        }
 
-                <StackPanel Grid.Row="0">
+        private void StopTimer_Click(object sender, RoutedEventArgs e)
+        {
+            _timer.Stop();
+            MessageBox.Show("Timer zatrzymany");
+        }
 
-                    <TextBlock Text="STALKER DESK"
-                               Foreground="White"
-                               FontSize="20"
-                               FontWeight="Bold"
-                               HorizontalAlignment="Center"
-                               Margin="0,25,0,50"/>
+        // =========================
+        // SCAN NETWORK
+        // =========================
+        private async Task ScanAllNetworks()
+        {
+            try
+            {
+                var arpTask = Task.Run(GetArpIPs);
 
-                </StackPanel>
+                string subnet = GetSubnet(GetLocalIP());
 
-                <StackPanel Grid.Row="1">
+                var subnets = new[]
+                {
+                    subnet,
+                    "10.10.10.",
+                    "192.168.1.",
+                    "192.168.0."
+                };
 
-                    <Button Content="Zamknij aplikację"
-                            Background="#DC2626"
-                            Foreground="White"
-                            FontWeight="SemiBold"
-                            BorderThickness="0"
-                            Height="45"
-                            Click="CloseApp_Click"/>
+                SemaphoreSlim sem = new SemaphoreSlim(50);
 
-                </StackPanel>
+                var tasks = subnets
+                    .Distinct()
+                    .SelectMany(s =>
+                        Enumerable.Range(1, 254).Select(async i =>
+                        {
+                            await sem.WaitAsync();
+                            try
+                            {
+                                string ip = s + i;
+                                await CheckIP(ip);
+                            }
+                            finally
+                            {
+                                sem.Release();
+                            }
+                        }))
+                    .ToList();
 
-            </Grid>
+                await Task.WhenAll(tasks);
 
-        </Border>
+                foreach (var ip in await arpTask)
+                    AddComputer(ip);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Scan error: " + ex.Message);
+            }
+        }
 
-        <!-- MAIN -->
-        <Grid Grid.Column="1" Margin="25">
+        // =========================
+        // ARP
+        // =========================
+        private System.Collections.Generic.List<string> GetArpIPs()
+        {
+            var list = new System.Collections.Generic.List<string>();
 
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
+            try
+            {
+                Process p = new Process();
+                p.StartInfo.FileName = "arp";
+                p.StartInfo.Arguments = "-a";
+                p.StartInfo.RedirectStandardOutput = true;
+                p.StartInfo.UseShellExecute = false;
+                p.StartInfo.CreateNoWindow = true;
 
-            <TextBlock Text="Lista komputerów w sieci"
-                       Foreground="{StaticResource TextMain}"
-                       FontSize="28"
-                       FontWeight="SemiBold"/>
+                p.Start();
 
-            <Border Grid.Row="1"
-                    Background="{StaticResource Navy1}"
-                    CornerRadius="16"
-                    Padding="15"
-                    Margin="0,20,0,0">
+                string output = p.StandardOutput.ReadToEnd();
+                p.WaitForExit();
 
-                <DataGrid ItemsSource="{Binding Computers}"
-                          Background="Transparent"
-                          BorderThickness="0"
-                          Foreground="{StaticResource TextMain}"
-                          RowBackground="{StaticResource Navy2}"
-                          AlternatingRowBackground="#1B2A4A"
-                          AutoGenerateColumns="False"
-                          CanUserAddRows="False"
-                          GridLinesVisibility="None"
-                          HeadersVisibility="Column"
-                          ColumnHeaderStyle="{StaticResource DataGridHeaderStyle}"
-                          IsReadOnly="False">
+                var matches = Regex.Matches(output, @"(\d+\.\d+\.\d+\.\d+)");
 
-                    <DataGrid.Columns>
+                foreach (Match m in matches)
+                    list.Add(m.Value);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("ARP error: " + ex.Message);
+            }
 
-                        <!-- NAME -->
-                        <DataGridTextColumn Header="Nazwa komputera"
-                                            Binding="{Binding Name}"
-                                            IsReadOnly="True"
-                                            Width="2*"/>
+            return list;
+        }
 
-                        <!-- IP (EDITABLE) -->
-                        <DataGridTextColumn Header="Adres IP"
-                                            Binding="{Binding IP, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                            Width="1*">
+        // =========================
+        // CHECK IP
+        // =========================
+        private async Task CheckIP(string ip)
+        {
+            bool ping = await PingIP(ip);
+            bool port = await IsPortOpen(ip, 5000);
 
-                            <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Foreground" Value="#9CA3AF"/>
-                                </Style>
-                            </DataGridTextColumn.ElementStyle>
+            Debug.WriteLine($"{ip} ping={ping} port={port}");
 
-                            <DataGridTextColumn.EditingElementStyle>
-                                <Style TargetType="TextBox">
-                                    <Setter Property="Background" Value="#111C33"/>
-                                    <Setter Property="Foreground" Value="White"/>
-                                    <Setter Property="BorderBrush" Value="#3B82F6"/>
-                                    <Setter Property="Padding" Value="4"/>
-                                </Style>
-                            </DataGridTextColumn.EditingElementStyle>
+            if (ping || port)
+            {
+                AddComputer(ip);
+            }
+        }
 
-                        </DataGridTextColumn>
+        private async Task<bool> PingIP(string ip)
+        {
+            try
+            {
+                using (Ping ping = new Ping())
+                {
+                    var r = await ping.SendPingAsync(ip, 300);
+                    return r.Status == IPStatus.Success;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
-                        <!-- ACTIONS -->
-                        <DataGridTemplateColumn Header="Akcje" Width="150">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Button Content="Zarządzaj"
-                                            Click="Manage_Click"
-                                            Style="{StaticResource GridButton}"/>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
+        private async Task<bool> IsPortOpen(string ip, int port)
+        {
+            try
+            {
+                using (TcpClient client = new TcpClient())
+                {
+                    var t = client.ConnectAsync(ip, port);
+                    var res = await Task.WhenAny(t, Task.Delay(300));
 
-                    </DataGrid.Columns>
+                    return res == t && client.Connected;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
-                </DataGrid>
+        // =========================
+        // ADD DEVICE TO UI
+        // =========================
+        private void AddComputer(string ip)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (!Computers.Any(c => c.IP == ip))
+                {
+                    Computers.Add(new Workstation
+                    {
+                        IP = ip,
+                        Name = "Device"
+                    });
+                }
+            });
+        }
 
-            </Border>
+        // =========================
+        // NETWORK HELPERS
+        // =========================
+        private string GetLocalIP()
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
 
-        </Grid>
+            foreach (var ip in host.AddressList)
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                    return ip.ToString();
 
-    </Grid>
+            return "192.168.1.1";
+        }
 
-</Window>
+        private string GetSubnet(string ip)
+        {
+            int last = ip.LastIndexOf('.');
+            return ip.Substring(0, last + 1);
+        }
+
+        // =========================
+        // SEND COMMAND
+        // =========================
+        private async Task SendCommand(string ip, string command)
+        {
+            try
+            {
+                using (TcpClient client = new TcpClient())
+                {
+                    await client.ConnectAsync(ip, 5000);
+
+                    using (var stream = client.GetStream())
+                    {
+                        string msg = command + "\n";
+                        byte[] data = Encoding.UTF8.GetBytes(msg);
+
+                        await stream.WriteAsync(data, 0, data.Length);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Brak połączenia z {ip}\n{ex.Message}");
+            }
+        }
+
+        private async Task SendTimer(string ip, int minutes)
+        {
+            await SendCommand(ip, $"timer {minutes}");
+        }
+
+        // =========================
+        // ACTIONS
+        // =========================
+        private async void Lock_Click(object sender, RoutedEventArgs e)
+        {
+            var pc = (sender as FrameworkElement)?.DataContext as Workstation;
+            if (pc != null)
+                await SendCommand(pc.IP, "lock");
+        }
+
+        private async void Restart_Click(object sender, RoutedEventArgs e)
+        {
+            var pc = (sender as FrameworkElement)?.DataContext as Workstation;
+            if (pc != null)
+                await SendCommand(pc.IP, "restart");
+        }
+
+        private async void Shutdown_Click(object sender, RoutedEventArgs e)
+        {
+            var pc = (sender as FrameworkElement)?.DataContext as Workstation;
+            if (pc != null)
+                await SendCommand(pc.IP, "shutdown");
+        }
+
+        // =========================
+        // UI EVENTS
+        // =========================
+        private void Manage_Click(object sender, RoutedEventArgs e)
+        {
+            var pc = (sender as FrameworkElement)?.DataContext as Workstation;
+
+            if (pc != null)
+                new ManageWindow(pc, SendCommand).ShowDialog();
+        }
+
+        private void CloseApp_Click(object sender, RoutedEventArgs e)
+        {
+            Application.Current.Shutdown();
+        }
+    }
+}
