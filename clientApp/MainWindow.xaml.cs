@@ -1,18 +1,28 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Forms;
+using System.Windows.Shapes;
+using System.Drawing;
+using System.Drawing.Imaging;
+
+
+
 
 namespace AgentWpf
 {
     public partial class MainWindow : Window
     {
-        private CancellationTokenSource _timerCts;
         private TcpListener _server;
+        private CancellationTokenSource _timerCts;
 
         public MainWindow()
         {
@@ -34,7 +44,7 @@ namespace AgentWpf
             _server = new TcpListener(IPAddress.Any, 5000);
             _server.Start();
 
-            Log("Agent działa...");
+            Log("Agent uruchomiony");
 
             Task.Run(async () =>
             {
@@ -57,21 +67,25 @@ namespace AgentWpf
         {
             try
             {
+                using (client)
                 using (var stream = client.GetStream())
-                using (var reader = new System.IO.StreamReader(stream, Encoding.UTF8))
+                using (var reader = new StreamReader(stream, Encoding.UTF8))
                 {
                     string cmd = reader.ReadLine();
-                    if (cmd != null)
-                        cmd = cmd.Trim();
 
-                    if (string.IsNullOrEmpty(cmd))
+                    if (string.IsNullOrWhiteSpace(cmd))
                         return;
 
                     Log("CMD: " + cmd);
+
+                    if (cmd == "screen")
+                    {
+                        SendScreenshot(stream);
+                        return;
+                    }
+
                     Execute(cmd);
                 }
-
-                client.Close();
             }
             catch (Exception ex)
             {
@@ -83,12 +97,9 @@ namespace AgentWpf
         {
             if (cmd.StartsWith("timer"))
             {
-                var parts = cmd.Split(' ');
-                int minutes;
-
-                if (parts.Length == 2 && int.TryParse(parts[1], out minutes))
-                    StartTimer(minutes);
-
+                string[] p = cmd.Split(' ');
+                if (p.Length == 2 && int.TryParse(p[1], out int min))
+                    StartTimer(min);
                 return;
             }
 
@@ -110,9 +121,7 @@ namespace AgentWpf
 
         private void StartTimer(int minutes)
         {
-            if (_timerCts != null)
-                _timerCts.Cancel();
-
+            _timerCts?.Cancel();
             _timerCts = new CancellationTokenSource();
             var token = _timerCts.Token;
 
@@ -126,15 +135,44 @@ namespace AgentWpf
 
                     if (!token.IsCancellationRequested)
                     {
-                        Log("Czas minął → LOCK");
                         Process.Start("rundll32.exe", "user32.dll,LockWorkStation");
                     }
                 }
-                catch (TaskCanceledException)
+                catch
                 {
                     Log("Timer anulowany");
                 }
             });
         }
+
+        // ✅ SCREENSHOT (WPF sposób – bez System.Drawing)
+
+        private void SendScreenshot(NetworkStream stream)
+        {
+            System.Drawing.Rectangle bounds = Screen.PrimaryScreen.Bounds;
+
+            using (Bitmap bmp = new Bitmap(bounds.Width, bounds.Height))
+            {
+                using (Graphics g = Graphics.FromImage(bmp))
+                {
+                    g.CopyFromScreen(bounds.X, bounds.Y, 0, 0, bounds.Size);
+                }
+
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    bmp.Save(ms, ImageFormat.Jpeg);
+                    byte[] img = ms.ToArray();
+
+                    byte[] size = BitConverter.GetBytes(img.Length);
+                    stream.Write(size, 0, size.Length);
+                    stream.Write(img, 0, img.Length);
+                }
+            }
+
+            Log("Wysłano screenshot");
+        }
+
+
+
     }
 }
